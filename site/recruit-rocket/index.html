@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recruit Rocket | Brent Blackmon</title>
+<meta name="description" content="Recruit Rocket: ten AI agents that run a job search like a small recruiting firm with one client. The AI does the grunt work; the job seeker brings the talent.">
+<script data-goatcounter="https://brentblackmon.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+<style>
+  /* Layout: brentblackmon.github.io system. Dark hero, cream stat strip, then the team board:
+     ten agents across nine stages in a 3 by 3 snake, with a red trail that lights each hand-off in order.
+     Single deliberate look (the site has no dark mode); #video switches the board to the dark hero palette. */
+  :root {
+    --dark: #111113;
+    --dark2: #1a1a1d;
+    --red: #d81e3e;
+    --cream: #f7f5f1;
+    --ink: #1a1a1a;
+    --gray: #55555a;
+    --on-dark-1: #f4f2ee;
+    --on-dark-2: #b7b7bc;
+    --on-dark-3: #9a9aa0;
+    --border: #e6e3dc;
+    --page: #ffffff;
+    --card: #ffffff;
+    --trail: #d9d5cc;
+    --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color-scheme: light;
+  }
+  body.video {
+    --page: #111113; --card: #1a1a1d; --cream: #1a1a1d; --ink: #f4f2ee; --gray: #b7b7bc;
+    --border: #2c2c31; --trail: #3a3a3e;
+    color-scheme: dark;
+  }
+
+  html, body { background: var(--page); color: var(--ink); }
+  body { font-family: var(--font); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding-inline: max(16px, 4vw); }
+
+  .site-nav { background: var(--dark); color: var(--on-dark-1); }
+  .site-nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 18px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 15px; letter-spacing: 0.5px; }
+  .mark { width: 30px; height: 30px; background: var(--red); color: #fff; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
+  .nav-note { font-size: 13px; font-weight: 600; letter-spacing: 0.5px; color: var(--on-dark-2); }
+
+  .hero { background: var(--dark); color: var(--on-dark-1); padding-block: 36px 40px; }
+  .eyebrow { font-size: 11px; letter-spacing: 2px; font-weight: 700; color: var(--on-dark-3); text-transform: uppercase; margin-bottom: 16px; }
+  .eyebrow b { color: var(--red); }
+  h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; line-height: 1.15; max-width: 900px; margin: 0 0 18px; text-wrap: balance; }
+  h1 .accent { color: var(--red); }
+  .hero-sub { font-size: 17px; color: var(--on-dark-2); max-width: 680px; line-height: 1.6; margin: 0 0 24px; }
+  .pill { display: inline-block; font: 700 12.5px/1 var(--font); letter-spacing: 0.3px; padding: 11px 18px; border-radius: 100px; border: 1px solid var(--red); background: var(--red); color: #fff; cursor: pointer; }
+  .pill:hover { background: #c01834; }
+  .pill:focus-visible, .agent:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; padding-block: 28px 0; }
+  .stat-card { border-top: 3px solid var(--red); background: var(--cream); padding: 14px 16px; text-align: center; }
+  .stat-num { font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+  .stat-label { font-size: 12.5px; color: var(--gray); line-height: 1.4; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
+
+  .section-head { padding-block: 28px 18px; }
+  .section-head h2 { font-size: 13px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; display: flex; align-items: center; gap: 12px; margin: 0; }
+  .section-head h2::before { content: ""; width: 30px; height: 3px; background: var(--red); }
+
+  .board { position: relative; }
+  .board svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 34px 40px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 22px; } }
+
+  .agent { position: relative; z-index: 1; text-align: center; font: inherit; color: inherit; background: var(--card); border: 1.5px solid var(--border); border-top: 3px solid var(--border); padding: 16px 14px; min-width: 0; min-height: 118px; height: 100%; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: border-color .3s, box-shadow .3s; }
+  .agent .tag { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--gray); }
+  .agent h3 { font-size: clamp(15px, 1.9vw, 17px); font-weight: 800; line-height: 1.2; margin: 0; }
+  .agent p { font-size: 13px; color: var(--gray); line-height: 1.45; margin: 0; }
+  .agent.done { border-top-color: var(--ink); }
+  .agent.on { border-color: var(--red); border-top-color: var(--red); box-shadow: 0 6px 22px color-mix(in srgb, var(--red) 22%, transparent); }
+  .agent.on .tag { color: var(--red); }
+
+  .trail-base { stroke: var(--trail); stroke-width: 2.5; fill: none; }
+  .trail-lit { stroke: var(--red); stroke-width: 3.5; fill: none; }
+  .spark { fill: var(--red); filter: drop-shadow(0 0 6px var(--red)); }
+
+  .readout { margin-block: 26px 36px; border-left: 3px solid var(--red); background: var(--cream); padding: 18px 22px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 18px; align-items: baseline; min-height: 104px; }
+  .rnum { font-size: 40px; font-weight: 800; color: var(--red); line-height: 1; grid-row: span 3; font-variant-numeric: tabular-nums; }
+  .rname { font-size: 19px; font-weight: 800; }
+  .rwhen { font-size: 10.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--red); }
+  .rtext { font-size: 15.5px; line-height: 1.55; color: var(--ink); max-width: 68ch; }
+
+  .site-footer { background: var(--dark); color: var(--on-dark-1); padding-block: 30px; }
+  .site-footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .site-footer .line { font-size: 15px; font-weight: 700; }
+  .site-footer .line span { color: var(--red); }
+  .site-footer .small { font-size: 12.5px; color: var(--on-dark-2); }
+
+  body.video .site-nav, body.video .pill, body.video .hero-sub, body.video .site-footer { display: none; }
+  html:has(body.video) { background: #111113; }
+  body.video { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+  body.video .hero { padding-block: 44px 6px; }
+  body.video .readout { margin-bottom: 0; min-height: 150px; }
+  body.video .agent { min-height: 170px; }
+  @media (prefers-reduced-motion: reduce) { .agent { transition: none; } }
+</style>
+
+<nav class="site-nav"><div class="wrap">
+  <a class="brand" href="../index.html"><span class="mark">BB</span>Brent Blackmon</a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../writing/index.html">Writing</a>
+    <a href="../work/index.html">Work</a>
+    <a href="../recruit-rocket/index.html" class="active">Recruit Rocket</a>
+    <a href="../about/index.html">About</a>
+  </div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow"><b>Recruit Rocket</b> · Your AI headhunter team</div>
+  <h1>An entire headhunter team, <span class="accent">working for you.</span></h1>
+  <p class="hero-sub">Ten AI agents run your search like a small recruiting firm with one client. They do the grunt work. You bring the talent. Nothing goes out without your yes.</p>
+  <button class="pill" id="play" type="button" aria-pressed="true">Pause the team</button>
+</div></header>
+
+<main class="wrap">
+  <section class="stats" aria-label="The team at a glance">
+    <div class="stat-card"><div class="stat-num">10</div><div class="stat-label">AI agents on your team</div></div>
+    <div class="stat-card"><div class="stat-num">1</div><div class="stat-label">client: you</div></div>
+    <div class="stat-card"><div class="stat-num">10 min</div><div class="stat-label">to set up from your resume</div></div>
+    <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">messages sent without your yes</div></div>
+  </section>
+
+  <div class="section-head"><h2>How the team works</h2></div>
+
+  <div class="board" id="board">
+    <svg id="trail" aria-hidden="true"></svg>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <section class="readout" aria-live="polite">
+    <div class="rnum" id="rnum">1</div>
+    <div class="rname" id="rname"></div>
+    <div class="rwhen" id="rwhen"></div>
+    <div class="rtext" id="rtext"></div>
+  </section>
+</main>
+
+<footer class="site-footer"><div class="wrap">
+  <div class="line">AI does the grunt work. <span>You bring the talent.</span></div>
+  <div class="small">Click any agent to see what it does.</div>
+</div></footer>
+
+<script>
+const AGENTS = [
+  { name: "Intake Agent", job: "Builds your profile", when: "Day one, 10 minutes", text: "Reads your resume, asks about five quick questions, and builds the facts file the rest of the team works from." },
+  { name: "Talent Scout", job: "Finds the right jobs", when: "Weekdays 7am, 1pm, 5pm", text: "Scans the job boards and grades every posting A, B, or C on real fit with your background, not on job title." },
+  { name: "Market Intel Analyst", job: "Spots who's about to hire", when: "On call", text: "Flags companies likely to hire before they post: a new CEO, fresh funding, an acquisition that needs an operator." },
+  { name: "Research Analyst", job: "Knows the company cold", when: "On call", text: "Reads what each company says about itself and confirms the right executive to contact, with a dated source." },
+  { name: "Brand Builder", job: "Builds your package", when: "On call", text: "A tailored ATS-ready resume, a short cover letter, and a one-page stat sheet with your best numbers up front." },
+  { name: "Outreach Writer", job: "Gets you in front of people", when: "On call", text: "Writes the email to the decision maker and the LinkedIn connect note, in your voice." },
+  { name: "Fact Checker", job: "Checks every number", when: "Always on", text: "Checks every claim against your own record, so the resume, stat sheet, and email all say the same thing." },
+  { name: "Interview Coach", job: "Role-plays and scores you", when: "Before every interview", text: "Role-plays your real interviewer, scores every answer on structure, proof, and fit, and shows you a stronger version to practice." },
+  { name: "Head Headhunter & Offer Negotiator", job: "Follows up and closes", when: "Every morning", text: "You approve and send. The team tracks every follow-up so nothing slips, and helps you ask for the right offer when it comes." }
+];
+
+const grid = document.getElementById("grid"), svg = document.getElementById("trail"), board = document.getElementById("board");
+const rnum = document.getElementById("rnum"), rname = document.getElementById("rname"), rwhen = document.getElementById("rwhen"), rtext = document.getElementById("rtext");
+const playBtn = document.getElementById("play");
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const NS = "http://www.w3.org/2000/svg";
+if (location.hash === "#video") document.body.classList.add("video");
+
+const els = AGENTS.map((a, i) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "agent"; b.id = "agent-" + (i + 1);
+  const last = i === AGENTS.length - 1, short = last ? "2 agents" : "Agent";
+  b.innerHTML = `<span class="tag">Stage ${i + 1} · ${short}</span><h3>${last ? "Headhunter &amp; Negotiator" : a.name}</h3><p>${a.job}</p>`;
+  b.addEventListener("click", () => { stop(); cur = i; show(i); });
+  grid.appendChild(b);
+  return b;
+});
+
+function place() {
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+  els.forEach((el, i) => {
+    const row = Math.floor(i / cols), pos = i % cols;
+    el.style.gridRow = row + 1;
+    el.style.gridColumn = (row % 2 === 0 ? pos : cols - 1 - pos) + 1;
+  });
+}
+
+let segs = [];
+function drawTrail() {
+  const bb = board.getBoundingClientRect();
+  svg.setAttribute("viewBox", `0 0 ${bb.width} ${bb.height}`);
+  svg.innerHTML = "";
+  const c = els.map(el => { const r = el.getBoundingClientRect(); return [r.left - bb.left + r.width / 2, r.top - bb.top + r.height / 2]; });
+  segs = [];
+  for (let i = 0; i < c.length - 1; i++) {
+    const [x1, y1] = c[i], [x2, y2] = c[i + 1], d = `M${x1},${y1} L${x2},${y2}`;
+    const base = document.createElementNS(NS, "path"); base.setAttribute("d", d); base.setAttribute("class", "trail-base");
+    const lit = document.createElementNS(NS, "path"); lit.setAttribute("d", d); lit.setAttribute("class", "trail-lit");
+    svg.append(base, lit);
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    lit.style.strokeDasharray = len; lit.style.strokeDashoffset = len;
+    segs.push({ lit, len, x1, y1, x2, y2 });
+  }
+  const spark = document.createElementNS(NS, "circle"); spark.setAttribute("r", 6); spark.setAttribute("class", "spark"); spark.style.opacity = 0;
+  svg.appendChild(spark); segs.spark = spark;
+}
+
+function show(i) {
+  els.forEach((el, k) => { el.classList.toggle("done", k < i); el.classList.toggle("on", k === i); });
+  segs.forEach((s, k) => { s.lit.style.strokeDashoffset = k < i ? 0 : s.len; });
+  rnum.textContent = i + 1; rname.textContent = AGENTS[i].name; rwhen.textContent = AGENTS[i].when; rtext.textContent = AGENTS[i].text;
+}
+
+let playing = !reduce, cur = 0, timer = null, raf = null;
+const HOLD = 1800, TRAVEL = 700;
+
+function travel(i, done) {
+  const s = segs[i], spark = segs.spark, t0 = performance.now();
+  spark.style.opacity = 1;
+  const step = now => {
+    const p = Math.min(1, (now - t0) / TRAVEL);
+    s.lit.style.strokeDashoffset = s.len * (1 - p);
+    spark.setAttribute("cx", s.x1 + (s.x2 - s.x1) * p);
+    spark.setAttribute("cy", s.y1 + (s.y2 - s.y1) * p);
+    if (p < 1) raf = requestAnimationFrame(step); else { spark.style.opacity = 0; done(); }
+  };
+  raf = requestAnimationFrame(step);
+}
+
+function tick() {
+  if (!playing) return;
+  show(cur);
+  const last = cur === AGENTS.length - 1;
+  timer = setTimeout(() => {
+    if (!playing) return;
+    if (!last) travel(cur, () => { cur++; tick(); });
+    else { cur = 0; tick(); }
+  }, last ? HOLD + 1600 : HOLD);
+}
+
+function stop() { playing = false; clearTimeout(timer); cancelAnimationFrame(raf); if (segs.spark) segs.spark.style.opacity = 0; playBtn.textContent = "Play the team"; playBtn.setAttribute("aria-pressed", "false"); }
+function start() { playing = true; playBtn.textContent = "Pause the team"; playBtn.setAttribute("aria-pressed", "true"); tick(); }
+playBtn.addEventListener("click", () => playing ? stop() : start());
+
+function layout() { place(); drawTrail(); show(Math.min(cur, AGENTS.length - 1)); }
+window.addEventListener("resize", () => { const was = playing; if (was) stop(); layout(); if (was) start(); });
+
+layout();
+if (reduce) { playBtn.textContent = "Play the team"; show(0); } else { tick(); }
+</script>
+
+<style>
+  .nav-links { display: flex; flex-wrap: wrap; gap: 22px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
+  .nav-links a { color: var(--on-dark-2); padding-bottom: 3px; border-bottom: 2px solid transparent; text-decoration: none; }
+  .nav-links a:hover { color: #fff; }
+  .nav-links a.active { color: #fff; border-bottom-color: var(--red); }
+  a.brand { color: inherit; text-decoration: none; }
+  body { margin: 0; }
+  @media (max-width: 720px) { .site-nav .wrap { flex-wrap: wrap; } }
+</style>
+</body>
+</html>
